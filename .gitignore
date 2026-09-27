@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.next/
+.env
+.env.local
+*.log
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
