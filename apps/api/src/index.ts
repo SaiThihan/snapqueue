@@ -21,7 +21,11 @@ app.post("/screenshots", async (req, res) => {
   const job = await queue.add(
     "screenshot",
     { url, viewport },
-    { jobId: computeJobId(url, viewport) }
+    {
+      jobId: computeJobId(url, viewport),
+      attempts: 3,
+      backoff: { type: "exponential", delay: 2000 },
+    }
   );
   res.status(202).json({ jobId: job.id });
 });

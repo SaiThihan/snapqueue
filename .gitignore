@@ -6,3 +6,4 @@ dist/
 *.log
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
+apps/worker/screenshots/

@@ -8,7 +8,8 @@
   },
   "dependencies": {
     "@snapqueue/shared": "*",
-    "bullmq": "^6.3.9"
+    "bullmq": "^6.3.9",
+    "playwright": "^1.63.0"
   },
   "devDependencies": {
     "@types/node": "^24",
