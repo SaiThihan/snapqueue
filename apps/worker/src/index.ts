@@ -31,5 +31,7 @@ const worker = new Worker(
   },
   {
     connection: createRedisConnection(),
+    concurrency: 3,
+    limiter: { max: 10, duration: 60000 },
   },
 );
