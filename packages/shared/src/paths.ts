@@ -56,15 +56,3 @@ export function screenshotPath(jobId: string): string {
 export function ensureScreenshotDir(): void {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
-
-/** Guards against a stored path escaping the screenshot directory. */
-export function resolveInsideScreenshotDir(fileName: string): string | null {
-  const base = path.resolve(SCREENSHOT_DIR);
-  const target = path.resolve(base, fileName);
-
-  if (target !== base && !target.startsWith(base + path.sep)) {
-    return null;
-  }
-
-  return target;
-}

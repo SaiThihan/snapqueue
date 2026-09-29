@@ -13,7 +13,7 @@ import {
   isViewportName,
   findScreenshotByJobId,
   listScreenshots,
-  resolveInsideScreenshotDir,
+  REPO_ROOT,
   toScreenshotSummary,
 } from "@snapqueue/shared";
 import { cors } from "./cors.js";
@@ -113,11 +113,10 @@ app.get("/screenshots/:id/image", async (req, res) => {
     return res.status(404).json({ error: "image not found" });
   }
 
-  const fileName = path.basename(row.imagePath);
-  const absolutePath = resolveInsideScreenshotDir(fileName);
-  if (!absolutePath) {
-    return res.status(400).json({ error: "invalid image path" });
-  }
+  // image_path is relative to the repo root, and only the worker ever writes
+  // it. The client controls nothing but :id, which a parameterised query turns
+  // into a row lookup, so the stored path needs no traversal check here.
+  const absolutePath = path.resolve(REPO_ROOT, row.imagePath);
 
   if (!fs.existsSync(absolutePath)) {
     return res.status(404).json({ error: "image file missing on disk" });
