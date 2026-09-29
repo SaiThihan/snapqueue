@@ -3,3 +3,11 @@ services:
     image: redis:7-alpine
     ports:
       - "6380:6379"
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: snapqueue
+      POSTGRES_PASSWORD: snapqueue
+      POSTGRES_DB: snapqueue
+    ports:
+      - "5435:5432"
