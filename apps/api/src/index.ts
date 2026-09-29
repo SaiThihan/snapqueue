@@ -12,13 +12,17 @@ import {
   VIEWPORT_NAMES,
   isViewportName,
   findScreenshotByJobId,
+  listScreenshots,
   resolveInsideScreenshotDir,
+  toScreenshotSummary,
 } from "@snapqueue/shared";
+import { cors } from "./cors.js";
 
 const logger = pino({ transport: { target: "pino-pretty" } });
 
 const app = express();
 app.use(pinoHttp({ logger }));
+app.use(cors);
 app.use(express.json());
 
 const queue = new Queue(SCREENSHOT_QUEUE, {
@@ -80,6 +84,18 @@ app.post("/screenshots", rateLimiter, async (req, res) => {
   res.status(202).json({ jobId: job.id });
 });
 
+app.get("/screenshots", async (req, res) => {
+  const limit = Number(req.query.limit ?? 20);
+  const url = typeof req.query.url === "string" ? req.query.url : undefined;
+
+  const rows = await listScreenshots({
+    limit: Number.isFinite(limit) ? limit : 20,
+    url,
+  });
+
+  res.json(rows.map(toScreenshotSummary));
+});
+
 app.get("/screenshots/:id", async (req, res) => {
   const job = await queue.getJob(req.params.id);
   if (!job) {
@@ -114,4 +130,6 @@ app.get("/screenshots/:id/image", async (req, res) => {
   return res.sendFile(absolutePath);
 });
 
-app.listen(3001, () => logger.info("API server listening on port 3001"));
+const PORT = Number(process.env.PORT ?? 3001);
+
+app.listen(PORT, () => logger.info(`API server listening on port ${PORT}`));
