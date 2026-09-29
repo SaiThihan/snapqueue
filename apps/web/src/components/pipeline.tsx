@@ -1,21 +1,16 @@
 "use client";
 
-import {
-  CameraIcon,
-  CpuIcon,
-  MonitorIcon,
-  RedisIcon,
-  ServerIcon,
-} from "./icons";
+import { CameraIcon, CpuIcon, MonitorIcon, RedisIcon, ServerIcon } from "./icons";
+import { NODE, Packets, usePipelineFx } from "./pipeline-fx";
 
 const WORKER_CONCURRENCY = 3;
 
 const STEPS = [
-  { id: "browser", label: <>Browser</>, icon: MonitorIcon },
-  { id: "api", label: <>Express<br />API</>, icon: ServerIcon },
-  { id: "queue", label: <>Redis /<br />BullMQ</>, icon: RedisIcon },
-  { id: "worker", label: <>Worker</>, icon: CpuIcon },
-  { id: "chromium", label: <>Chromium</>, icon: CameraIcon },
+  { id: NODE.browser, label: <>Browser</>, Icon: MonitorIcon },
+  { id: NODE.api, label: <>Express<br />API</>, Icon: ServerIcon },
+  { id: NODE.queue, label: <>Redis /<br />BullMQ</>, Icon: RedisIcon, redis: true },
+  { id: NODE.worker, label: <>Worker</>, Icon: CpuIcon },
+  { id: NODE.chromium, label: <>Chromium</>, Icon: CameraIcon },
 ] as const;
 
 type Props = {
@@ -23,6 +18,7 @@ type Props = {
 };
 
 export function Pipeline({ activeCount }: Props) {
+  const { registerNode, stepsRef, flashes } = usePipelineFx();
   const busySlots = Math.min(activeCount, WORKER_CONCURRENCY);
 
   return (
@@ -48,21 +44,40 @@ export function Pipeline({ activeCount }: Props) {
         </div>
       </div>
 
-      <div className="steps">
-        {STEPS.map(({ id, label, icon: Icon }) => (
+      <div className="steps" ref={stepsRef}>
+        {STEPS.map(({ id, label, Icon, ...rest }) => (
           <div
             key={id}
-            className={`step on${id === "chromium" && activeCount > 0 ? " capturing" : ""}`}
+            className={`step on${
+              id === NODE.chromium && activeCount > 0 ? " capturing" : ""
+            }`}
           >
             <div
               className="node"
-              style={id === "queue" ? { color: "var(--redis)" } : undefined}
+              ref={(element) => registerNode(id, element)}
+              style={"redis" in rest ? { color: "var(--redis)" } : undefined}
             >
               <Icon />
+              {flashes
+                .filter((flash) => flash.index === id)
+                .map((flash) => (
+                  <span
+                    key={flash.id}
+                    className={
+                      "node-flash" +
+                      (flash.variant ? ` ${flash.variant}` : "") +
+                      (flash.show ? " show" : "")
+                    }
+                  >
+                    {flash.text}
+                  </span>
+                ))}
             </div>
             <label>{label}</label>
           </div>
         ))}
+
+        <Packets />
       </div>
     </section>
   );

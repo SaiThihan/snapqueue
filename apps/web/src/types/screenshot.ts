@@ -26,10 +26,9 @@ export type ScreenshotJob = {
   imageUrl: string | null;
   failedReason: string | null;
   createdAt: string;
-  live: boolean;
 };
 
-export const TERMINAL_STATUSES: readonly JobStatus[] = ["completed", "failed"];
+const TERMINAL_STATUSES: readonly JobStatus[] = ["completed", "failed"];
 
 export function isTerminal(status: JobStatus): boolean {
   return TERMINAL_STATUSES.includes(status);

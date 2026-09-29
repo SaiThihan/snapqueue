@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { Thumbnail } from "./thumbnail";
+import type { ScreenshotJob } from "@/types/screenshot";
 
 type Props = {
-  open: boolean;
-  imageUrl: string | null;
-  url: string;
-  details: string;
+  job: ScreenshotJob | null;
   onClose: () => void;
 };
 
-export function Lightbox({ open, imageUrl, url, details, onClose }: Props) {
+export function Lightbox({ job, onClose }: Props) {
   useEffect(() => {
-    if (!open) return;
+    if (!job) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -26,9 +25,9 @@ export function Lightbox({ open, imageUrl, url, details, onClose }: Props) {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [open, onClose]);
+  }, [job, onClose]);
 
-  if (!open) {
+  if (!job) {
     return (
       <div className="lightbox" aria-hidden="true">
         <div className="lightbox-backdrop" onClick={onClose} />
@@ -64,16 +63,13 @@ export function Lightbox({ open, imageUrl, url, details, onClose }: Props) {
           </svg>
         </button>
 
-        <div className="thumb thumb-large">
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={`Screenshot of ${url}`} />
-          ) : null}
-        </div>
+        <Thumbnail job={job} large />
 
         <div className="lightbox-meta">
-          <div className="lightbox-url mono">{url}</div>
-          <div className="lightbox-details">{details}</div>
+          <div className="lightbox-url mono">{job.url}</div>
+          <div className="lightbox-details">
+            {job.viewport} &middot; {job.jobId}
+          </div>
         </div>
       </div>
     </div>

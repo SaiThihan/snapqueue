@@ -1,7 +1,7 @@
 "use client";
 
-import { resolveImageUrl } from "@/services/screenshots-api";
-import { ArrowRightIcon, WarningIcon } from "./icons";
+import { ArrowRightIcon } from "./icons";
+import { Thumbnail } from "./thumbnail";
 import type { ScreenshotJob } from "@/types/screenshot";
 
 type Props = {
@@ -47,38 +47,6 @@ function statusNote(job: ScreenshotJob): string {
   return relativeTime(job.createdAt);
 }
 
-function ChromeBar() {
-  return (
-    <div className="chrome">
-      <span className="tl r" />
-      <span className="tl y" />
-      <span className="tl g" />
-      <span className="bar" />
-    </div>
-  );
-}
-
-function Thumbnail({ job }: { job: ScreenshotJob }) {
-  const imageUrl = resolveImageUrl(job.imageUrl);
-
-  return (
-    <div className="thumb">
-      <ChromeBar />
-      <div className="art">
-        {job.status === "completed" && imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" />
-        ) : job.status === "failed" ? (
-          <div className="failed-icon">
-            <WarningIcon />
-          </div>
-        ) : (
-          <div className="skeleton" />
-        )}
-      </div>
-    </div>
-  );
-}
 
 export function JobsList({ jobs, loading, onSelect }: Props) {
   if (loading) {

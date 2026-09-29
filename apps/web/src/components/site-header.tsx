@@ -1,5 +1,7 @@
 "use client";
 
+import { MoonIcon, SunIcon } from "./icons";
+
 type Props = {
   theme: "light" | "dark";
   onToggle: () => void;
@@ -19,9 +21,10 @@ export function SiteHeader({ theme, onToggle }: Props) {
         type="button"
         className="theme-toggle"
         onClick={onToggle}
-        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
       >
-        {theme === "dark" ? "Light mode" : "Dark mode"}
+        {theme === "dark" ? <SunIcon /> : <MoonIcon />}
       </button>
     </header>
   );

@@ -144,6 +144,18 @@
   }
   .theme-toggle:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 
+  /* icon-only variant: keep it square and centre the glyph */
+  .theme-toggle:has(svg) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+  }
+
+  .theme-toggle svg { width: 15px; height: 15px; }
+
   /* pipeline */
   .pipeline {
     background: var(--surface);
@@ -563,6 +575,11 @@
   .thumb .art { flex: 1; position: relative; }
   .thumb .art svg { width: 100%; height: 100%; display: block; }
 
+  /* The original design only ever held inline SVG. Real captures are <img>,
+     which needs its own sizing — object-fit crops to fill the small preview
+     without distorting the page it captured. */
+  .thumb .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
   .thumb .skeleton {
     position: absolute;
     inset: 0;
@@ -656,11 +673,28 @@
   .lightbox-close svg { width: 14px; height: 14px; }
   .lightbox-close:hover { color: var(--text); }
 
+  /* The large view drops the fixed 84/56 ratio so a portrait mobile capture is
+     not letterboxed into a letterbox, and caps the height so a tall page cannot
+     push the metadata off screen. */
   .thumb-large {
     width: 100%;
     height: auto;
-    aspect-ratio: 84 / 56;
     border-radius: 12px;
+  }
+
+  .thumb-large .art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+  }
+
+  .thumb-large .art img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
   }
 
   .thumb-large .chrome { height: 26px; gap: 6px; padding: 0 10px; }

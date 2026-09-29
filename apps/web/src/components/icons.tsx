@@ -117,3 +117,55 @@ export function WarningIcon({ className, strokeWidth = 2 }: IconProps) {
     </svg>
   );
 }
+
+export function PackageIcon({ className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} className={className} aria-hidden>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} className={className} aria-hidden>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+export function ImageIcon({ className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} className={className} aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+
+export function SunIcon({ className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} className={className} aria-hidden>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+  );
+}
+
+export function MoonIcon({ className, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} className={className} aria-hidden>
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
