@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "./db.js";
 import { screenshots } from "./schema.js";
 
@@ -16,21 +16,12 @@ export async function findScreenshotByJobId(
   return rows[0] ?? null;
 }
 
-export async function listScreenshots(options?: {
-  limit?: number;
-  url?: string;
-}): Promise<ScreenshotRow[]> {
-  const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
-  const conditions = options?.url
-    ? eq(screenshots.url, options.url)
-    : undefined;
-
+export async function listScreenshots(limit = 20): Promise<ScreenshotRow[]> {
   return db
     .select()
     .from(screenshots)
-    .where(conditions ? and(conditions) : undefined)
     .orderBy(desc(screenshots.createdAt))
-    .limit(limit);
+    .limit(Math.min(Math.max(limit, 1), 100));
 }
 
 export type ScreenshotSummary = {

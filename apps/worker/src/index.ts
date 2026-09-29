@@ -9,7 +9,10 @@ import {
   DEFAULT_VIEWPORT,
   isViewportName,
   screenshotPath,
+  ensureScreenshotDir,
 } from "@snapqueue/shared";
+
+ensureScreenshotDir();
 
 const browser = await chromium.launch();
 

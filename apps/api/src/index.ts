@@ -86,14 +86,12 @@ app.post("/screenshots", rateLimiter, async (req, res) => {
 
 app.get("/screenshots", async (req, res) => {
   const limit = Number(req.query.limit ?? 20);
-  const url = typeof req.query.url === "string" ? req.query.url : undefined;
 
-  const rows = await listScreenshots({
-    limit: Number.isFinite(limit) ? limit : 20,
-    url,
-  });
-
-  res.json(rows.map(toScreenshotSummary));
+  res.json(
+    (await listScreenshots(Number.isFinite(limit) ? limit : 20)).map(
+      toScreenshotSummary,
+    ),
+  );
 });
 
 app.get("/screenshots/:id", async (req, res) => {
