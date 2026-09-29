@@ -32,13 +32,24 @@ const worker = new Worker(
       await page.screenshot({ path: imagePath });
       console.log("done");
 
-      await db.insert(screenshots).values({
-        jobId: String(job.id),
-        url: job.data.url,
-        viewport: job.data.viewport,
-        status: "completed",
-        imagePath,
-      });
+      await db
+        .insert(screenshots)
+        .values({
+          jobId: String(job.id),
+          url: job.data.url,
+          viewport: job.data.viewport,
+          status: "completed",
+          imagePath,
+        })
+        .onConflictDoUpdate({
+          target: screenshots.jobId,
+          set: {
+            status: "completed",
+            imagePath,
+            failedReason: null,
+            createdAt: new Date(),
+          },
+        });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`job ${job.id} failed:`, message);
@@ -47,13 +58,23 @@ const worker = new Worker(
       const attemptsExhausted = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
 
       if (isUnrecoverable || attemptsExhausted) {
-        await db.insert(screenshots).values({
-          jobId: String(job.id),
-          url: job.data.url,
-          viewport: job.data.viewport,
-          status: "failed",
-          failedReason: message,
-        });
+        await db
+          .insert(screenshots)
+          .values({
+            jobId: String(job.id),
+            url: job.data.url,
+            viewport: job.data.viewport,
+            status: "failed",
+            failedReason: message,
+          })
+          .onConflictDoUpdate({
+            target: screenshots.jobId,
+            set: {
+              status: "failed",
+              failedReason: message,
+              createdAt: new Date(),
+            },
+          });
       }
 
       if (isUnrecoverable) {

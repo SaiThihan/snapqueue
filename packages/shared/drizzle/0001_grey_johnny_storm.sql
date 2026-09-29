@@ -1,0 +1,1 @@
+ALTER TABLE "screenshots" ADD CONSTRAINT "screenshots_job_id_unique" UNIQUE("job_id");

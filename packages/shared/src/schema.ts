@@ -6,7 +6,7 @@ export const screenshots = pgTable(
   "screenshots",
   {
     id: serial("id").primaryKey(),
-    jobId: text("job_id").notNull(),
+    jobId: text("job_id").notNull().unique(),
     url: text("url").notNull(),
     viewport: text("viewport").notNull(),
     status: statusEnum("status").notNull(),
