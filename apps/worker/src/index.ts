@@ -1,6 +1,14 @@
 import { Worker, UnrecoverableError } from "bullmq";
 import { chromium } from "playwright";
-import { createRedisConnection, SCREENSHOT_QUEUE, db, screenshots } from "@snapqueue/shared";
+import {
+  createRedisConnection,
+  SCREENSHOT_QUEUE,
+  db,
+  screenshots,
+  VIEWPORTS,
+  DEFAULT_VIEWPORT,
+  isViewportName,
+} from "@snapqueue/shared";
 
 const browser = await chromium.launch();
 
@@ -9,8 +17,11 @@ const worker = new Worker(
   async (job) => {
     console.log(`processing job ${job.id}`, job.data);
 
+    const requested = job.data.viewport;
+    const viewportName = isViewportName(requested) ? requested : DEFAULT_VIEWPORT;
+
     const context = await browser.newContext({
-      viewport: { width: 1280, height: 800 },
+      viewport: VIEWPORTS[viewportName],
     });
 
     const imagePath = `./screenshots/screenshot-${job.id}.png`;

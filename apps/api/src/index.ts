@@ -3,7 +3,13 @@ import crypto from "node:crypto";
 import { Queue } from "bullmq";
 import pino from "pino";
 import { pinoHttp } from "pino-http";
-import { createRedisConnection, SCREENSHOT_QUEUE } from "@snapqueue/shared";
+import {
+  createRedisConnection,
+  SCREENSHOT_QUEUE,
+  DEFAULT_VIEWPORT,
+  VIEWPORT_NAMES,
+  isViewportName,
+} from "@snapqueue/shared";
 
 const logger = pino({ transport: { target: "pino-pretty" } });
 
@@ -45,10 +51,18 @@ function isValidUrl(url: string) {
 }
 
 app.post("/screenshots", rateLimiter, async (req, res) => {
-  const { url, viewport } = req.body;
+  const { url, viewport = DEFAULT_VIEWPORT } = req.body ?? {};
+
   if (typeof url !== "string" || !isValidUrl(url)) {
     return res.status(400).json({ error: "invalid url" });
   }
+
+  if (!isViewportName(viewport)) {
+    return res.status(400).json({
+      error: `viewport must be one of: ${VIEWPORT_NAMES.join(", ")}`,
+    });
+  }
+
   const job = await queue.add(
     "screenshot",
     { url, viewport },
