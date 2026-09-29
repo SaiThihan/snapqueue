@@ -8,6 +8,7 @@ import {
   VIEWPORTS,
   DEFAULT_VIEWPORT,
   isViewportName,
+  screenshotPath,
 } from "@snapqueue/shared";
 
 const browser = await chromium.launch();
@@ -24,7 +25,7 @@ const worker = new Worker(
       viewport: VIEWPORTS[viewportName],
     });
 
-    const imagePath = `./screenshots/screenshot-${job.id}.png`;
+    const imagePath = screenshotPath(String(job.id));
 
     try {
       const page = await context.newPage();
@@ -50,6 +51,8 @@ const worker = new Worker(
             createdAt: new Date(),
           },
         });
+
+      return { imagePath };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`job ${job.id} failed:`, message);

@@ -1,5 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { Queue } from "bullmq";
 import pino from "pino";
 import { pinoHttp } from "pino-http";
@@ -9,6 +11,8 @@ import {
   DEFAULT_VIEWPORT,
   VIEWPORT_NAMES,
   isViewportName,
+  findScreenshotByJobId,
+  resolveInsideScreenshotDir,
 } from "@snapqueue/shared";
 
 const logger = pino({ transport: { target: "pino-pretty" } });
@@ -82,7 +86,32 @@ app.get("/screenshots/:id", async (req, res) => {
     return res.status(404).json({ error: "job not found" });
   }
   const state = await job.getState();
-  res.json({ id: job.id, status: state });
+  res.json({
+    id: job.id,
+    status: state,
+    imageUrl: state === "completed" ? `/screenshots/${job.id}/image` : null,
+  });
+});
+
+app.get("/screenshots/:id/image", async (req, res) => {
+  const row = await findScreenshotByJobId(req.params.id);
+  if (!row?.imagePath) {
+    return res.status(404).json({ error: "image not found" });
+  }
+
+  const fileName = path.basename(row.imagePath);
+  const absolutePath = resolveInsideScreenshotDir(fileName);
+  if (!absolutePath) {
+    return res.status(400).json({ error: "invalid image path" });
+  }
+
+  if (!fs.existsSync(absolutePath)) {
+    return res.status(404).json({ error: "image file missing on disk" });
+  }
+
+  res.type("png");
+  res.setHeader("Cache-Control", "no-store");
+  return res.sendFile(absolutePath);
 });
 
 app.listen(3001, () => logger.info("API server listening on port 3001"));
