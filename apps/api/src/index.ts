@@ -43,13 +43,13 @@ async function rateLimiter(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function computeJobId(url: string, viewport: string) {
+export function computeJobId(url: string, viewport: string) {
   const hash = crypto.createHash("sha256");
   hash.update(`${url}:${viewport}`);
   return `shot_${hash.digest("hex")}`;
 }
 
-function isValidUrl(url: string) {
+export function isValidUrl(url: string) {
   try {
     const parsed = new URL(url);
     return parsed.protocol === "http:" || parsed.protocol === "https:";
@@ -96,14 +96,27 @@ app.get("/screenshots", async (req, res) => {
 
 app.get("/screenshots/:id", async (req, res) => {
   const job = await queue.getJob(req.params.id);
-  if (!job) {
+
+  if (job) {
+    const state = await job.getState();
+    return res.json({
+      id: job.id,
+      status: state,
+      imageUrl: state === "completed" ? `/screenshots/${job.id}/image` : null,
+    });
+  }
+
+  // Redis has nothing (removeOnComplete evicted it) — Postgres is the
+  // permanent record, so an old job still has a real answer here.
+  const row = await findScreenshotByJobId(req.params.id);
+  if (!row) {
     return res.status(404).json({ error: "job not found" });
   }
-  const state = await job.getState();
+
   res.json({
-    id: job.id,
-    status: state,
-    imageUrl: state === "completed" ? `/screenshots/${job.id}/image` : null,
+    id: row.jobId,
+    status: row.status,
+    imageUrl: row.status === "completed" ? `/screenshots/${row.jobId}/image` : null,
   });
 });
 
@@ -129,4 +142,9 @@ app.get("/screenshots/:id/image", async (req, res) => {
 
 const PORT = Number(process.env.PORT ?? 3001);
 
-app.listen(PORT, () => logger.info(`API server listening on port ${PORT}`));
+// guarded so importing `app` for tests doesn't also start a real server
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(PORT, () => logger.info(`API server listening on port ${PORT}`));
+}
+
+export { app };

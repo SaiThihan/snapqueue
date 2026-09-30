@@ -2,6 +2,9 @@
   "name": "snapqueue",
   "private": true,
   "version": "0.0.0",
+  "scripts": {
+    "setup": "cd infra && docker compose up -d && cd .. && npm install && npm run db:generate -w packages/shared && npm run db:migrate -w packages/shared"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
