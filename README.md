@@ -1,18 +1,15 @@
 # SnapQueue
 
-URL → PNG screenshot service built to learn Redis and BullMQ properly: a real
-async job queue, not a toy example. Paste a URL, pick a viewport, get a
-screenshot — while the API never blocks on the slow part.
+URL → PNG screenshot service built to learn Redis and BullMQ properly. Paste
+a URL, pick a viewport, get a screenshot — the API never blocks on the slow
+part.
 
 ## Why a queue at all
 
-Taking a screenshot means launching a real browser, navigating, waiting for
-the page to settle, then capturing pixels — 2 to 10 seconds. An HTTP handler
-that does this inline blocks that request the whole time, and every
-concurrent request queues up behind it.
-
-So the work is pushed into a background job instead. The API's only jobs are:
-enqueue the work, and answer "is it done yet?" — never the work itself.
+A screenshot takes 2–10 seconds (launch a browser, load the page, capture).
+An HTTP handler that does this inline blocks the whole request, and every
+concurrent request queues up behind it. So the work goes into a background
+job — the API only enqueues it and answers "done yet?"
 
 ```
 Next.js  ──HTTP──▶  Express API  ──▶  Redis / BullMQ  ──▶  Worker  ──▶  Playwright
@@ -22,59 +19,48 @@ Next.js  ──HTTP──▶  Express API  ──▶  Redis / BullMQ  ──▶ 
               Postgres (permanent history)
 ```
 
-Five real pieces: a frontend, an API, a queue, a worker, a browser. The API
-and worker are **separate processes on purpose** — that separation is what
-makes the dedup trick below possible, and what stops one slow job from
-blocking every other request.
+API and worker are **separate processes on purpose** — that's what makes the
+dedup below possible, and what stops one slow job blocking everyone else.
 
-## The engineering decisions this project is actually about
+## Key decisions
 
-**Deterministic job IDs, not random ones.** A job's ID is
-`shot_<sha256(url + viewport)>` instead of an auto-incrementing number. If two
-requests hash to the same ID, BullMQ doesn't create a second job — it hands
-back the existing one. Five people requesting the same URL in the same
-second share one Chromium launch instead of spawning five.
+**Deterministic job IDs.** `shot_<sha256(url + viewport)>` instead of a
+random ID. Two identical requests hash to the same job — BullMQ hands back
+the existing one instead of creating a second. Five people, one URL, one
+Chromium launch.
 
-**`concurrency: 3` — a memory limit, not a guess.** Each active screenshot
-context costs roughly 300–500MB of Chromium memory. On a 2GB box, that's
-about 3 before the machine runs out of room. This is the number the whole
-project's memory budget is built around — turn it up without more RAM and
-you trade a few faster screenshots for the worker falling over under load.
+**`concurrency: 3` is a memory limit, not a guess.** Each screenshot context
+costs ~300–500MB of Chromium. On a 2GB box, that's ~3 before it runs out of
+room. Turning it up without more RAM trades a few faster jobs for the worker
+falling over.
 
-**Retries know the difference between "try again" and "never will."** A
-timeout gets 3 attempts with exponential backoff (2s, 4s, ...) — the target
-site might just be slow right now. A DNS failure (`net::ERR_NAME_NOT_RESOLVED`)
-throws BullMQ's `UnrecoverableError` instead — that hostname will never
-resolve no matter how many times you ask, so it fails once, immediately,
-instead of wasting ~7 seconds finding that out the slow way.
+**Retries know "try again" from "never will."** Timeouts get 3 retries with
+backoff. A DNS failure throws `UnrecoverableError` instead — that hostname
+was never going to resolve, so it fails once, fast.
 
-**Two independent rate limits, protecting two different things.** The
-worker's own `limiter` (10 jobs/min) protects the *sites being screenshotted*
-from getting hammered — it throttles throughput regardless of who submitted
-what. A separate per-IP limit on `POST /screenshots` (10 req/min) protects
-*this API* from being spammed. Different layer, different failure mode,
-different fix.
+**Two rate limits, two different jobs.** The worker's `limiter` throttles
+how fast *sites get hit*. A per-IP limit on `POST /screenshots` throttles how
+fast *this API* can be hit. Different failure mode, different fix.
 
-**History outlives the queue on purpose.** Redis holds job state via
-`removeOnComplete` — old completed jobs get pruned so a URL's ID can be
-reused later. Postgres holds the permanent record of what was ever
-screenshotted, independent of whether Redis has since forgotten it.
+**History outlives the queue.** Redis prunes old completed jobs
+(`removeOnComplete`) so IDs can be reused; Postgres keeps the permanent
+record regardless.
 
 ## Stack
 
 | Layer | Choice | Why |
 |---|---|---|
-| Frontend | Next.js | Polling UI, live-animated request-path diagram |
-| API | Express | Two endpoints; no framework overhead needed |
-| Worker | Plain Node + tsx | A loop that consumes jobs, nothing more |
-| Queue | BullMQ + Redis | Job state, retries, dedup, rate limiting |
-| History | Postgres + Drizzle | Permanent record, independent of Redis's eviction |
-| Browser | Playwright (Chromium only) | One browser process reused across jobs |
+| Frontend | Next.js | Polling UI, live request-path diagram |
+| API | Express | Two endpoints, no framework overhead |
+| Worker | Plain Node + tsx | A loop that consumes jobs |
+| Queue | BullMQ + Redis | State, retries, dedup, rate limiting |
+| History | Postgres + Drizzle | Permanent, independent of Redis's eviction |
+| Browser | Playwright (Chromium only) | One browser reused across jobs |
 
 ## Running it locally
 
 ```bash
-npm run setup   # starts Redis + Postgres, installs, creates the database schema
+npm run setup   # Redis + Postgres + install + migrate
 ```
 
 Then, one per terminal:
@@ -87,22 +73,16 @@ npm run dev -w apps/web
 
 Open `http://localhost:3000`.
 
-Redis and Postgres run on non-default ports (`6380`, `5435`) to avoid
-clashing with other local projects — see `infra/docker-compose.yml` and
-`packages/shared/src/redis.ts` / `db.ts` if you need to change them.
-
 ## API
 
 | | |
 |---|---|
 | `POST /screenshots` | `{ url, viewport }` → `202 { jobId }` |
-| `GET /screenshots/:id` | current status; checks Redis first, falls back to Postgres once a job's Redis record has been pruned |
-| `GET /screenshots/:id/image` | the PNG, once completed |
-| `GET /screenshots` | recent history, from Postgres |
+| `GET /screenshots/:id` | status; Redis first, Postgres fallback |
+| `GET /screenshots/:id/image` | the PNG |
+| `GET /screenshots` | recent history |
 
-## Deliberately out of scope
+## Out of scope
 
-Auth/user accounts, S3/object storage (local disk is enough for this scale),
-multiple browser engines, WebSocket/SSE (polling is the chosen tradeoff, not
-an oversight), multi-page capture. Each would be a real, separate project on
-top of this one.
+Auth, S3/object storage, multiple browser engines, WebSocket/SSE, multi-page
+capture — each a separate project on top of this one.

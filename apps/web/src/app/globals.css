@@ -640,8 +640,9 @@
 
   .lightbox-panel {
     position: relative;
-    width: 100%;
-    max-width: 460px;
+    width: fit-content;
+    min-width: 320px;
+    max-width: min(880px, 92vw);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -655,18 +656,19 @@
 
   .lightbox-close {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: -14px;
+    right: -14px;
     width: 28px;
     height: 28px;
-    border-radius: 8px;
+    border-radius: 50%;
     border: 1px solid var(--border);
-    background: var(--surface-2);
+    background: var(--surface);
     color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    box-shadow: var(--shadow);
     z-index: 1;
   }
 
@@ -687,6 +689,7 @@
     align-items: center;
     justify-content: center;
     background: var(--surface-2);
+    flex: none;
   }
 
   .thumb-large .art img {

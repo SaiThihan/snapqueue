@@ -66,9 +66,8 @@ export function Lightbox({ job, onClose }: Props) {
         <Thumbnail job={job} large />
 
         <div className="lightbox-meta">
-          <div className="lightbox-url mono">{job.url}</div>
-          <div className="lightbox-details">
-            {job.viewport} &middot; {job.jobId}
+          <div className="lightbox-url mono">
+            {job.url} <span className="lightbox-details">&middot; {job.viewport}</span>
           </div>
         </div>
       </div>
